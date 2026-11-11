@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec 2088: Aprendizaje Interactivo</title>
+    <!-- Tailwind CSS desde CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#0a0a12',
+                            card: '#121225',
+                            border: '#1f1f42',
+                            orange: '#ff7700',
+                            purple: '#a855f7',
+                            cyan: '#00f0ff',
+                            pink: '#ff007f'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'Courier', 'monospace'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a12;
+            color: #e2e8f0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .font-cyber {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Glowing Neon Effects */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+        .glow-orange {
+            box-shadow: 0 0 15px rgba(255, 119, 0, 0.4);
+        }
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .text-glow-cyan {
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+        }
+        .text-glow-orange {
+            text-shadow: 0 0 10px rgba(255, 119, 0, 0.7);
+        }
+
+        /* 3D Tilt Card Base Style */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out, box-shadow 0.3s ease;
+        }
+
+        /* Custom Scrollbar for inner cards */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d0d1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f1f42;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+
+        /* Scanline Overlay */
+        .scanline {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.3) 50%,
+                rgba(0, 0, 0, 0.3)
+            );
+            background-size: 100% 4px;
+        }
+
+        /* Cyberpunk Button */
+        .btn-cyber {
+            position: relative;
+            clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+            transition: all 0.2s ease;
+        }
+        .btn-cyber:hover {
+            filter: brightness(1.2);
+            transform: translateY(-2px);
+        }
+
+        /* Hidden Egg Easter Item */
+        .easter-egg {
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .easter-egg:hover {
+            transform: scale(1.3) rotate(15deg);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between text-slate-100 overflow-hidden select-none">
+
+    <!-- CANVAS BACKGROUND (Animated Grid & Particles) -->
+    <canvas id="cyberCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+    
+    <!-- SCANLINE EFFECT OVERLAY -->
+    <div class="fixed inset-0 pointer-events-none z-10 scanline opacity-40"></div>
+
+    <!-- TOP BAR / HEADER -->
+    <header class="relative z-20 border-b border-cyber-border bg-cyber-bg/80 backdrop-blur px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-br from-cyber-cyan to-cyber-purple flex items-center justify-center font-bold font-cyber text-black">
+                P
+            </div>
+            <div>
+                <h1 class="text-xs font-cyber text-cyber-cyan tracking-wider uppercase">MODULO: SEGURIDAD Y PRIVACIDAD DIGITAL</h1>
+                <p class="text-sm font-bold text-white flex items-center gap-2">
+                    <span id="chapterTitle">Cargando Sistema...</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- PROGRESS BAR & BADGES -->
+        <div class="hidden md:flex items-center gap-6">
+            <!-- Chapter Steps -->
+            <div id="chapterNodes" class="flex gap-2"></div>
+            
+            <!-- Points / Achievements counter -->
+            <div class="flex items-center gap-4 bg-cyber-card border border-cyber-border px-3 py-1.5 rounded-lg text-xs font-cyber">
+                <div class="flex items-center gap-1.5 text-cyber-orange">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    <span id="scoreDisplay" class="font-bold">0 PTS</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-cyber-cyan cursor-pointer" onclick="toggleModal('achievementsModal')">
+                    <i data-lucide="award" class="w-4 h-4"></i>
+                    <span id="badgeCount">0/13</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTROLS & UTILS -->
+        <div class="flex items-center gap-2">
+            <button onclick="toggleFacilitatorMode()" class="p-2 rounded bg-cyber-card border border-cyber-border text-xs text-cyber-cyan hover:bg-cyber-cyan/10 transition" title="Modo Facilitador (N)">
+                <i data-lucide="presentation" class="w-4 h-4"></i>
+            </button>
+            <button onclick="toggleModal('achievementsModal')" class="p-2 rounded bg-cyber-card border border-cyber-border text-xs text-cyber-purple hover:bg-cyber-purple/10 transition" title="Logros">
+                <i data-lucide="trophy" class="w-4 h-4"></i>
+            </button>
+            <button onclick="toggleFullscreen()" class="p-2 rounded bg-cyber-card border border-cyber-border text-xs text-slate-300 hover:text-white transition" title="Pantalla Completa (F)">
+                <i data-lucide="maximize" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN SCENE CONTAINER -->
+    <main class="relative z-20 flex-1 flex flex-col md:flex-row items-stretch overflow-hidden p-4 md:p-6 gap-6 max-w-7xl mx-auto w-full">
+        
+        <!-- MASCOT SIDEBAR (PIXEL THE BOOK) -->
+        <aside class="w-full md:w-80 flex flex-col items-center justify-start bg-cyber-card/60 backdrop-blur border border-cyber-border p-4 rounded-xl relative shrink-0">
+            <!-- SVG Mascot Display -->
+            <div class="relative w-44 h-44 mb-3 flex items-center justify-center" id="pixelMascotContainer">
+                <!-- SVG Pixel rendered dynamically JS -->
+            </div>
+
+            <!-- Dialogue Bubble -->
+            <div class="w-full bg-cyber-bg/90 border border-cyber-cyan/40 p-3 rounded-lg relative text-xs md:text-sm text-slate-200 shadow-lg font-cyber">
+                <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 border-b-cyber-cyan/40"></div>
+                <div class="flex items-center justify-between text-[10px] text-cyber-cyan mb-1 font-bold">
+                    <span>PIXEL v4.0</span>
+                    <span id="pixelExpressionLabel">SABIO</span>
+                </div>
+                <p id="mascotSpeech" class="leading-relaxed">Cargando consejos del sistema...</p>
+            </div>
+
+            <!-- Current Scene Info / Facilitator Timer -->
+            <div id="facilitatorPanel" class="hidden w-full mt-auto pt-3 border-t border-cyber-border/60 text-xs font-cyber text-slate-400">
+                <div class="flex justify-between items-center text-cyber-orange mb-1">
+                    <span><i data-lucide="clock" class="inline w-3 h-3"></i> Tiempo Escena:</span>
+                    <span id="sceneTimer">00:00</span>
+                </div>
+                <p id="facilitatorNotes" class="text-[11px] bg-cyber-bg p-2 rounded text-slate-300 border border-cyber-border">Notas del facilitador...</p>
+            </div>
+        </aside>
+
+        <!-- MAIN DISPLAY CARD / SCENE VIEW -->
+        <section class="flex-1 bg-cyber-card/80 backdrop-blur border border-cyber-border rounded-xl p-6 flex flex-col justify-between overflow-y-auto relative shadow-2xl">
+            
+            <!-- HEADER ESCENA: Título Decodificable y Fuentes -->
+            <div>
+                <div class="flex justify-between items-start gap-4 mb-4">
+                    <div>
+                        <span id="sceneCategory" class="text-xs font-cyber px-2 py-0.5 rounded bg-cyber-purple/20 text-cyber-purple border border-cyber-purple/40">
+                            CAPÍTULO 1
+                        </span>
+                        <h2 id="decodeTitle" class="text-xl md:text-3xl font-extrabold font-cyber mt-2 text-white text-glow-cyan tracking-tight">
+                            TITULO DE LA ESCENA
+                        </h2>
+                    </div>
+                    <button id="sourceBtn" onclick="toggleModal('sourceModal')" class="hidden btn-cyber bg-cyber-bg hover:bg-cyber-border border border-cyber-cyan/40 text-cyber-cyan px-3 py-1.5 text-xs font-cyber flex items-center gap-2">
+                        <i data-lucide="link" class="w-3.5 h-3.5"></i> Fuente
+                    </button>
+                </div>
+
+                <!-- DYNAMIC CONTENT CONTAINER -->
+                <div id="sceneBody" class="mt-4 min-h-[300px]">
+                    <!-- Injected via JavaScript -->
+                </div>
+            </div>
+
+            <!-- FOOTER ESCENA: Nav Extra & Pagination -->
+            <div class="mt-6 pt-4 border-t border-cyber-border/40 flex justify-between items-center text-xs text-slate-400 font-cyber">
+                <span id="sceneCounter">Escena 1 de 12</span>
+                <span class="hidden md:inline text-[11px]">Usa flechas ← → o teclado para navegar</span>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- NAVIGATION FLOATING BUTTONS -->
+    <div class="fixed bottom-6 right-6 z-30 flex items-center gap-3">
+        <button id="prevBtn" onclick="prevScene()" class="btn-cyber w-12 h-12 bg-cyber-card border border-cyber-border text-white flex items-center justify-center hover:border-cyber-cyan text-cyber-cyan shadow-lg disabled:opacity-30 disabled:pointer-events-none">
+            <i data-lucide="chevron-left" class="w-6 h-6"></i>
+        </button>
+        <button id="nextBtn" onclick="nextScene()" class="btn-cyber w-12 h-12 bg-cyber-orange text-black flex items-center justify-center font-bold shadow-lg hover:brightness-110">
+            <i data-lucide="chevron-right" class="w-6 h-6"></i>
+        </button>
+    </div>
+
+    <!-- MODAL: LOGROS -->
+    <div id="achievementsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-center justify-center p-4">
+        <div class="bg-cyber-card border border-cyber-purple w-full max-w-2xl rounded-xl p-6 relative max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b border-cyber-border pb-3">
+                <h3 class="text-xl font-cyber text-cyber-purple font-bold flex items-center gap-2">
+                    <i data-lucide="trophy"></i> LOGROS DEL SISTEMA (13)
+                </h3>
+                <button onclick="toggleModal('achievementsModal')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div id="achievementsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-2 flex-1">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: FUENTES & REFERENCIAS -->
+    <div id="sourceModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-center justify-center p-4">
+        <div class="bg-cyber-card border border-cyber-cyan w-full max-w-lg rounded-xl p-6 relative">
+            <div class="flex justify-between items-center mb-4 border-b border-cyber-border pb-3">
+                <h3 class="text-lg font-cyber text-cyber-cyan font-bold flex items-center gap-2">
+                    <i data-lucide="book-open"></i> FUENTE VERIFICADA
+                </h3>
+                <button onclick="toggleModal('sourceModal')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div id="sourceContent" class="text-sm font-cyber text-slate-300 space-y-3 leading-relaxed">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN INTERACTIVE SCRIPT -->
+    <script>
+        /* ==========================================================================
+           1. ESTADO GLOBAL & SISTEMA DE PUNTOS Y LOGROS (LOCALSTORAGE)
+           ========================================================================== */
+        const state = {
+            currentSceneIndex: 0,
+            score: 0,
+            unlockedBadges: [],
+            easterEggsFound: [],
+            facilitatorMode: false,
+            sceneStartTime: Date.now(),
+            branchHistory: [], // Para árbol de decisiones
+            userAnswers: {}
+        };
+
+        const ACHIEVEMENTS = [
+            { id: 'first_step', title: 'Iniciación Cyber', desc: 'Comenzaste la travesía de aprendizaje.', icon: 'shield-check' },
+            { id: 'phishing_master', title: 'Ojo de Águila', desc: 'Identificaste el ataque de phishing en el chat.', icon: 'eye' },
+            { id: 'pass_master', title: 'Fortaleza Digital', desc: 'Construiste una contraseña de nivel militar.', icon: 'lock' },
+            { id: 'decision_maker', title: 'Líder de Crisis', desc: 'Completaste el caso ramificado con éxito.', icon: 'git-branch' },
+            { id: 'compass_guru', title: 'Brújula Ética', desc: 'Resolviste la brújula de seguridad digital.', icon: 'compass' },
+            { id: 'sorter_pro', title: 'Clasificador Experto', desc: 'Organizaste los datos sensibles correctamente.', icon: 'layers' },
+            { id: 'timeline_hero', title: 'Historiador Tech', desc: 'Ordenaste los hitos de ciberseguridad.', icon: 'clock' },
+            { id: 'quiz_ace', title: 'Maestro Ciber', desc: 'Puntuación perfecta en el quiz final.', icon: 'award' },
+            { id: 'egg_hunter', title: 'Detective Ciberpunk', desc: 'Encontraste los 5 objetos ocultos.', icon: 'search' },
+            { id: 'speed_demon', title: 'Respuesta Rápida', desc: 'Toma de decisiones en menos de 10 segundos.', icon: 'zap' },
+            { id: 'privacy_guard', title: 'Escudo de Privacidad', desc: 'Protegiste la identidad de tu equipo.', icon: 'user-check' },
+            { id: 'analyst', title: 'Analista de Riesgo', desc: 'Evaluaste correctamente el semáforo ciber.', icon: 'activity' },
+            { id: 'persistent', title: 'Resiliencia Digital', desc: 'Reiniciaste una ruta y probaste otra opción.', icon: 'refresh-cw' }
+        ];
+
+        // Guardar/Cargar en localStorage de forma segura
+        function saveProgress() {
+            try {
+                const data = {
+                    score: state.score,
+                    unlockedBadges: state.unlockedBadges,
+                    easterEggsFound: state.easterEggsFound
+                };
+                localStorage.setItem('cybersec_progress', JSON.stringify(data));
+            } catch (e) {
+                console.warn('LocalStorage inaccesible:', e);
+            }
+        }
+
+        function loadProgress() {
+            try {
+                const data = localStorage.getItem('cybersec_progress');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    state.score = parsed.score || 0;
+                    state.unlockedBadges = parsed.unlockedBadges || [];
+                    state.easterEggsFound = parsed.easterEggsFound || [];
+                }
+            } catch (e) {
+                console.warn('Error leyendo LocalStorage:', e);
+            }
+        }
+
+        function unlockBadge(id) {
+            if (!state.unlockedBadges.includes(id)) {
+                state.unlockedBadges.push(id);
+                addPoints(100);
+                saveProgress();
+                showBadgeNotification(id);
+                updateHeaderUI();
+            }
+        }
+
+        function addPoints(pts) {
+            state.score += pts;
+            saveProgress();
+            updateHeaderUI();
+        }
+
+        function findEasterEgg(eggId) {
+            if (!state.easterEggsFound.includes(eggId)) {
+                state.easterEggsFound.push(eggId);
+                addPoints(50);
+                if (state.easterEggsFound.length >= 5) {
+                    unlockBadge('egg_hunter');
+                } else {
+                    showCustomToast(`¡Objeto secreto hallado! (${state.easterEggsFound.length}/5)`);
+                }
+                saveProgress();
+            }
+        }
+
+        /* ==========================================================================
+           2. MASCOTA SVG: PIXEL EL LIBRO (4 EXPRESIONES DINÁMICAS)
+           ========================================================================== */
+        function getPixelSVG(expression = 'sabio') {
+            // Ojos según la expresión
+            let eyesSVG = '';
+            let mouthSVG = '';
+
+            if (expression === 'feliz') {
+                eyesSVG = `
+                    <circle cx="65" cy="80" r="8" fill="#00f0ff" />
+                    <circle cx="115" cy="80" r="8" fill="#00f0ff" />
+                    <circle cx="67" cy="78" r="3" fill="#fff" />
+                    <circle cx="117" cy="78" r="3" fill="#fff" />
+                `;
+                mouthSVG = `<path d="M 75 105 Q 90 120 105 105" stroke="#00f0ff" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+            } else if (expression === 'sorprendida') {
+                eyesSVG = `
+                    <circle cx="65" cy="75" r="11" fill="#ff7700" />
+                    <circle cx="115" cy="75" r="11" fill="#ff7700" />
+                    <circle cx="65" cy="75" r="4" fill="#fff" />
+                    <circle cx="115" cy="75" r="4" fill="#fff" />
+                `;
+                mouthSVG = `<ellipse cx="90" cy="110" rx="8" ry="12" fill="none" stroke="#ff7700" stroke-width="4"/>`;
+            } else if (expression === 'pensando') {
+                eyesSVG = `
+                    <ellipse cx="65" cy="78" rx="8" ry="4" fill="#a855f7" />
+                    <circle cx="115" cy="75" r="8" fill="#a855f7" />
+                    <circle cx="117" cy="73" r="3" fill="#fff" />
+                `;
+                mouthSVG = `<path d="M 75 110 L 105 105" stroke="#a855f7" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+            } else if (expression === 'guiño') {
+                eyesSVG = `
+                    <path d="M 55 80 Q 65 70 75 80" stroke="#00f0ff" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <circle cx="115" cy="80" r="8" fill="#00f0ff" />
+                    <circle cx="117" cy="78" r="3" fill="#fff" />
+                `;
+                mouthSVG = `<path d="M 75 105 Q 90 118 105 105" stroke="#00f0ff" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+            }
+
+            return `
+            <svg viewBox="0 0 180 180" class="w-full h-full drop-shadow-[0_0_15px_rgba(0,240,255,0.3)]">
+                <defs>
+                    <linearGradient id="bookCover" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#121225"/>
+                        <stop offset="100%" stop-color="#0a0a12"/>
+                    </linearGradient>
+                    <linearGradient id="neonBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00f0ff"/>
+                        <stop offset="50%" stop-color="#a855f7"/>
+                        <stop offset="100%" stop-color="#ff7700"/>
+                    </linearGradient>
+                </defs>
+                <!-- Lomo y cuerpo del libro -->
+                <rect x="25" y="25" width="130" height="130" rx="12" fill="url(#bookCover)" stroke="url(#neonBorder)" stroke-width="3" />
+                <!-- Hojas / Páginas internas -->
+                <path d="M 35 35 L 145 35 L 145 145 L 35 145 Z" fill="none" stroke="#1f1f42" stroke-width="2" stroke-dasharray="4,4"/>
+                <!-- Marcador de página estilo Neón -->
+                <path d="M 90 25 L 90 55 L 100 45 L 110 55 L 110 25" fill="#ff7700" />
+                <!-- Expresión Ojos -->
+                ${eyesSVG}
+                <!-- Expresión Boca -->
+                ${mouthSVG}
+                <!-- Circuitos decorativos -->
+                <circle cx="40" cy="135" r="3" fill="#00f0ff"/>
+                <path d="M 40 135 L 60 135 L 70 145" stroke="#00f0ff" stroke-width="1.5" fill="none"/>
+            </svg>`;
+        }
+
+        function updateMascot(expression, text) {
+            document.getElementById('pixelMascotContainer').innerHTML = getPixelSVG(expression);
+            document.getElementById('mascotSpeech').innerText = text;
+            document.getElementById('pixelExpressionLabel').innerText = expression.toUpperCase();
+        }
+
+        /* ==========================================================================
+           3. BASE DE DATOS DE ESCENAS (12 ESCENAS / 60 MINUTOS DE CLASE)
+           ========================================================================== */
+        const SCENES = [
+            {
+                id: 1,
+                chapter: "CAPÍTULO 1: LA AMENAZA",
+                title: "Infiltración en el Red",
+                type: "intro",
+                mascot: { exp: "sorprendida", speech: "¡Alerta en la red! Un grupo de cibercriminales intenta comprometer la red escolar. ¿Estás listo para detenerlos?" },
+                facilitator: "Presentación inicial del escenario. Tiempo estimado: 3 minutos.",
+                source: "INCIBE - Guía de Ciberseguridad en Centros Educativos (2025). https://www.incibe.es",
+                render: () => `
+                    <div class="space-y-4">
+                        <p class="text-slate-300 leading-relaxed">
+                            Bienvenido al sistema **CyberSec 2088**. Cuatro compañeros de tu clase (Alex, Maya, Leo y Sofia) están recibiendo mensajes sospechosos en sus dispositivos institucionales.
+                        </p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+                            <div class="bg-cyber-bg p-3 rounded border border-cyber-border text-center">
+                                <div class="w-10 h-10 mx-auto rounded-full bg-cyber-cyan/20 border border-cyber-cyan flex items-center justify-center font-bold text-cyber-cyan">A</div>
+                                <span class="text-xs font-cyber mt-2 block">Alex (Dev)</span>
+                            </div>
+                            <div class="bg-cyber-bg p-3 rounded border border-cyber-border text-center">
+                                <div class="w-10 h-10 mx-auto rounded-full bg-cyber-purple/20 border border-cyber-purple flex items-center justify-center font-bold text-cyber-purple">M</div>
+                                <span class="text-xs font-cyber mt-2 block">Maya (Diseño)</span>
+                            </div>
+                            <div class="bg-cyber-bg p-3 rounded border border-cyber-border text-center">
+                                <div class="w-10 h-10 mx-auto rounded-full bg-cyber-orange/20 border border-cyber-orange flex items-center justify-center font-bold text-cyber-orange">L</div>
+                                <span class="text-xs font-cyber mt-2 block">Leo (Gamer)</span>
+                            </div>
+                            <div class="bg-cyber-bg p-3 rounded border border-cyber-border text-center">
+                                <div class="w-10 h-10 mx-auto rounded-full bg-cyber-pink/20 border border-cyber-pink flex items-center justify-center font-bold text-cyber-pink">S</div>
+                                <span class="text-xs font-cyber mt-2 block">Sofia (Redes)</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-cyber-cyan font-cyber bg-cyber-cyan/10 p-3 rounded border border-cyber-cyan/30">
+                            💡 TU OBJETIVO: Tomar decisiones informadas, clasificar información sensible y neutralizar los riesgos digitales.
+                        </p>
+                        <!-- Easter Egg #1 -->
+                        <div class="flex justify-end">
+                            <span onclick="findEasterEgg('egg1')" class="easter-egg text-xs text-cyber-border hover:text-cyber-cyan">🔍 [USB_Drive.dat]</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 2,
+                chapter: "CAPÍTULO 1: LA AMENAZA",
+                title: "Simulador de Chat SOS",
+                type: "chat_sim",
+                mascot: { exp: "pensando", speech: "Alex recibió este mensaje sospechoso. Analiza el chat de inmediato..." },
+                facilitator: "Analizar los indicadores de Phishing. Tiempo estimado: 5 minutos.",
+                source: "OWASP Top 10 Social Engineering Risks (2025). https://owasp.org",
+                render: () => `
+                    <div class="space-y-4">
+                        <div class="bg-cyber-bg p-4 rounded-xl border border-cyber-border font-cyber space-y-3 max-w-lg mx-auto shadow-inner">
+                            <div class="flex items-center gap-2 border-b border-cyber-border pb-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                                <span class="text-xs font-bold text-slate-300">Desconocido (+57 300 999 8822)</span>
+                            </div>
+                            <div class="bg-cyber-card p-3 rounded text-xs text-slate-200 border-l-2 border-cyber-orange">
+                                <p class="text-cyber-orange font-bold text-[10px]">MENSAJE URGENTE:</p>
+                                ¡Hola Alex! Tu cuenta del portal escolar ha sido suspendida. Ingresa AQUÍ urgentemente para reestructurar tu clave: <u>http://soporte-colegio-login.net/reset</u>
+                            </div>
+                        </div>
+
+                        <p class="text-sm text-center font-cyber text-slate-300">¿Qué debería hacer Alex en esta situación?</p>
+
+                        <div id="chatOptions" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <button onclick="handleDecision(1, 'bad')" class="btn-cyber p-3 bg-cyber-bg border border-red-500/40 text-xs font-cyber text-left hover:bg-red-500/10">
+                                ❌ Hacer clic de inmediato para no perder acceso.
+                            </button>
+                            <button onclick="handleDecision(1, 'good')" class="btn-cyber p-3 bg-cyber-bg border border-cyber-cyan/40 text-xs font-cyber text-left hover:bg-cyber-cyan/10">
+                                ✅ Ignorar enlace, verificar URL oficial y reportar.
+                            </button>
+                            <button onclick="handleDecision(1, 'medium')" class="btn-cyber p-3 bg-cyber-bg border border-yellow-500/40 text-xs font-cyber text-left hover:bg-yellow-500/10">
+                                ⚠️ Responder pidiendo comprobante de identidad.
+                            </button>
+                        </div>
+                        <div id="chatFeedback" class="hidden p-3 rounded font-cyber text-xs"></div>
+                    </div>
+                `
+            },
+            {
+                id: 3,
+                chapter: "CAPÍTULO 2: DATOS SEGUROS",
+                title: "Clasificador de Información",
+                type: "sorter",
+                mascot: { exp: "sabio", speech: "No todos los datos son iguales. Clasifica cuáles son públicos y cuáles confidenciales." },
+                facilitator: "Actividad práctica de datos sensibles (PII). Tiempo estimado: 6 minutos.",
+                source: "Reglamento General de Protección de Datos (RGPD) & Ley 1581.",
+                render: () => `
+                    <div class="space-y-4">
+                        <p class="text-xs font-cyber text-slate-400">Arrastra o selecciona la categoría correcta para el elemento mostrado:</p>
+                        
+                        <div class="bg-cyber-bg p-6 rounded-xl border border-cyber-border text-center">
+                            <span id="currentItem" class="text-lg font-bold font-cyber text-cyber-cyan block mb-4">
+                                "Contraseña del correo personal"
+                            </span>
+
+                            <div class="flex justify-center gap-4">
+                                <button onclick="sortItem('public')" class="btn-cyber px-6 py-2 bg-cyber-card border border-cyber-purple text-cyber-purple text-xs font-cyber hover:bg-cyber-purple/20">
+                                    PÚBLICO
+                                </button>
+                                <button onclick="sortItem('private')" class="btn-cyber px-6 py-2 bg-cyber-card border border-cyber-orange text-cyber-orange text-xs font-cyber hover:bg-cyber-orange/20">
+                                    ALTAMENTE CONFIDENCIAL
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center text-xs font-cyber">
+                            <span>Progreso: <span id="sortScore">0</span> / 4</span>
+                            <!-- Easter Egg #2 -->
+                            <span onclick="findEasterEgg('egg2')" class="easter-egg text-cyber-border hover:text-cyber-orange">🔑 [KeyPass_v2]</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 4,
+                chapter: "CAPÍTULO 2: DATOS SEGUROS",
+                title: "Medidor de Contraseñas",
+                type: "builder",
+                mascot: { exp: "guiño", speech: "Prueba crear una clave robusta. Maya quiere asegurar sus diseños." },
+                facilitator: "Construcción interactiva de passwords. Tiempo estimado: 5 minutos.",
+                source: "NIST Special Publication 800-63B - Digital Identity Guidelines.",
+                render: () => `
+                    <div class="space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-cyber text-slate-300">Crea tu clave ciberpunk:</label>
+                            <input type="text" id="passInput" oninput="checkPasswordStrength(this.value)" placeholder="Ej: P@ssw0rd_Cyber2088" class="w-full bg-cyber-bg border border-cyber-border p-3 rounded font-cyber text-sm text-cyber-cyan focus:outline-none focus:border-cyber-cyan" />
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-cyber">
+                                <span>Fuerza del Escudo:</span>
+                                <span id="passScoreLabel" class="text-red-400">Débil</span>
+                            </div>
+                            <div class="w-full bg-cyber-bg h-3 rounded-full overflow-hidden border border-cyber-border">
+                                <div id="passMeterBar" class="h-full bg-red-500 w-1/4 transition-all duration-300"></div>
+                            </div>
+                        </div>
+
+                        <ul id="passRequirements" class="text-xs font-cyber space-y-1 text-slate-400">
+                            <li id="reqLen">❌ Mínimo 10 caracteres</li>
+                            <li id="reqNum">❌ Incluye números</li>
+                            <li id="reqSym">❌ Incluye símbolos (!@#$%^&*)</li>
+                        </ul>
+                    </div>
+                `
+            },
+            {
+                id: 5,
+                chapter: "CAPÍTULO 3: CASO RAMIFICADO",
+                title: "Crisis en el Servidor (Etapa 1)",
+                type: "branching",
+                mascot: { exp: "sorprendida", speech: "¡El servidor del colegio tiene malware! ¿Qué dirección tomamos?" },
+                facilitator: "Inicio del árbol ramificado de 5 etapas. Tiempo: 7 minutos.",
+                source: "CERT Resiliencia en Redes y Respuesta a Incidentes.",
+                render: () => renderBranchNode('start')
+            },
+            {
+                id: 6,
+                chapter: "CAPÍTULO 3: CASO RAMIFICADO",
+                title: "Árbol de Decisiones Tomadas",
+                type: "branch_summary",
+                mascot: { exp: "sabio", speech: "Revisemos las consecuencias de tus elecciones en la crisis." },
+                facilitator: "Revisión del camino recorrido en la crisis. Tiempo: 4 minutos.",
+                source: "Metodología de Análisis de Decisiones en Ciberseguridad.",
+                render: () => `
+                    <div class="space-y-4 font-cyber">
+                        <h3 class="text-sm text-cyber-cyan">RUTA DE CRISIS RECORRIDA:</h3>
+                        <div id="treePathContainer" class="space-y-2 bg-cyber-bg p-4 rounded border border-cyber-border text-xs">
+                            <!-- Inyectado por JS -->
+                        </div>
+                        <button onclick="resetBranching()" class="btn-cyber px-4 py-2 bg-cyber-purple/20 border border-cyber-purple text-cyber-purple text-xs flex items-center gap-2 hover:bg-cyber-purple/40">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Reiniciar Ruta
+                        </button>
+                    </div>
+                `
+            },
+            {
+                id: 7,
+                chapter: "CAPÍTULO 4: BRÚJULA ÉTICA",
+                title: "Brújula de Preguntas Sí/No",
+                type: "compass",
+                mascot: { exp: "pensando", speech: "Responde honestamente esta brújula ética ante dilemas digitales." },
+                facilitator: "Dilemas éticos en línea. Tiempo: 6 minutos.",
+                source: "Unicef - Ciudadanía Digital y Ética en Redes (2024).",
+                render: () => `
+                    <div class="space-y-4">
+                        <div id="compassQuestionBox" class="bg-cyber-bg p-5 rounded-xl border border-cyber-cyan/40 text-center font-cyber">
+                            <p id="compassQText" class="text-sm font-bold text-slate-100">¿Compartirías un pantallazo privado si es divertido?</p>
+                            <div class="flex justify-center gap-4 mt-4">
+                                <button onclick="answerCompass(true)" class="btn-cyber px-6 py-2 bg-green-500/20 border border-green-500 text-green-400 text-xs">SÍ</button>
+                                <button onclick="answerCompass(false)" class="btn-cyber px-6 py-2 bg-red-500/20 border border-red-500 text-red-400 text-xs">NO</button>
+                            </div>
+                        </div>
+                        <div id="compassRecommendation" class="hidden bg-cyber-card p-4 rounded border border-cyber-purple text-xs font-cyber text-slate-300"></div>
+                        <!-- Easter Egg #3 -->
+                        <div class="flex justify-start">
+                            <span onclick="findEasterEgg('egg3')" class="easter-egg text-xs text-cyber-border hover:text-cyber-purple">🧭 [Ethic_Compass.dll]</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 8,
+                chapter: "CAPÍTULO 4: EVALUACIÓN DE RIESGO",
+                title: "Semáforo de Amenazas",
+                type: "traffic_light",
+                mascot: { exp: "sabio", speech: "Evalúa el nivel de peligro de estas situaciones en el semáforo." },
+                facilitator: "Evaluación de riesgo relativo. Tiempo: 5 minutos.",
+                source: "NIST Cybersecurity Framework 2.0 (2024).",
+                render: () => `
+                    <div class="space-y-4 font-cyber">
+                        <div class="bg-cyber-bg p-4 rounded border border-cyber-border text-xs">
+                            <p class="font-bold text-cyber-cyan mb-2">Escenario: "Conectarse al Wi-Fi libre de un parque sin VPN para ingresar al banco."</p>
+                            <div class="flex gap-2">
+                                <button onclick="checkTraffic('verde')" class="flex-1 py-2 rounded bg-green-900/40 border border-green-500 text-green-400 text-center hover:bg-green-500/20">BAJO</button>
+                                <button onclick="checkTraffic('amarillo')" class="flex-1 py-2 rounded bg-yellow-900/40 border border-yellow-500 text-yellow-400 text-center hover:bg-yellow-500/20">MEDIO</button>
+                                <button onclick="checkTraffic('rojo')" class="flex-1 py-2 rounded bg-red-900/40 border border-red-500 text-red-400 text-center hover:bg-red-500/20">CRÍTICO</button>
+                            </div>
+                        </div>
+                        <div id="trafficFeedback" class="hidden p-3 rounded text-xs"></div>
+                    </div>
+                `
+            },
+            {
+                id: 9,
+                chapter: "CAPÍTULO 5: LÍNEA DE TIEMPO",
+                title: "Evolución de la Ciberseguridad",
+                type: "timeline",
+                mascot: { exp: "guiño", speech: "Ordena estos hitos clave para entender cómo cambió la tecnología." },
+                facilitator: "Historia y contexto ciber. Tiempo: 5 minutos.",
+                source: "IEEE History of Computing and Cybersecurity.",
+                render: () => `
+                    <div class="space-y-3 font-cyber">
+                        <p class="text-xs text-slate-400">Haz clic en los eventos en orden cronológico correcto (del más antiguo al más reciente):</p>
+                        <div id="timelineEvents" class="space-y-2">
+                            <button onclick="pickTimeline(1)" id="tl1" class="w-full text-left p-3 rounded bg-cyber-bg border border-cyber-border text-xs hover:border-cyber-cyan">📅 Creación del primer gusano de red (Creeper)</button>
+                            <button onclick="pickTimeline(2)" id="tl2" class="w-full text-left p-3 rounded bg-cyber-bg border border-cyber-border text-xs hover:border-cyber-cyan">📅 Invención de la Autenticación de Dos Factores (2FA)</button>
+                            <button onclick="pickTimeline(3)" id="tl3" class="w-full text-left p-3 rounded bg-cyber-bg border border-cyber-border text-xs hover:border-cyber-cyan">📅 Auge de Inteligencia Artificial para Detección de Threat Control</button>
+                        </div>
+                        <p id="timelineStatus" class="text-xs text-cyber-orange"></p>
+                        <!-- Easter Egg #4 -->
+                        <div class="flex justify-end">
+                            <span onclick="findEasterEgg('egg4')" class="easter-egg text-xs text-cyber-border hover:text-cyber-cyan">⌛ [Time_Log.sys]</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 10,
+                chapter: "CAPÍTULO 5: RETO FINAL",
+                title: "Quiz Final de Evaluación",
+                type: "quiz",
+                mascot: { exp: "pensando", speech: "Es momento de la prueba final. Demuestra lo que aprendiste." },
+                facilitator: "Evaluación formativa de 10 preguntas. Tiempo: 10 minutos.",
+                source: "Banco de Evaluación Internacional en Seguridad Digital para Estudiantes.",
+                render: () => renderQuizScreen()
+            },
+            {
+                id: 11,
+                chapter: "CAPÍTULO 6: RESULTADOS",
+                title: "Rúbrica de Evaluación",
+                type: "rubric",
+                mascot: { exp: "feliz", speech: "¡Felicitaciones! Has completado el módulo. Aquí está tu rúbrica." },
+                facilitator: "Cierre de sesión y evaluación cualitativa. Tiempo: 4 minutos.",
+                source: "Rúbrica de Desempeño Escolar en Competencias Digitales.",
+                render: () => `
+                    <div class="space-y-4 font-cyber text-xs">
+                        <table class="w-full text-left border-collapse border border-cyber-border">
+                            <thead>
+                                <tr class="bg-cyber-bg text-cyber-cyan border-b border-cyber-border">
+                                    <th class="p-2 border border-cyber-border">Criterio</th>
+                                    <th class="p-2 border border-cyber-border">Inicial</th>
+                                    <th class="p-2 border border-cyber-border">Competente</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-slate-300">
+                                <tr>
+                                    <td class="p-2 border border-cyber-border font-bold">Identificación de Riesgos</td>
+                                    <td class="p-2 border border-cyber-border">Duda al detectar phishing.</td>
+                                    <td class="p-2 border border-cyber-border text-green-400">Distingue URLs y engaños al instante.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 border border-cyber-border font-bold">Gestión de Claves</td>
+                                    <td class="p-2 border border-cyber-border">Usa contraseñas simples.</td>
+                                    <td class="p-2 border border-cyber-border text-green-400">Crea frases complejas + 2FA.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 border border-cyber-border font-bold">Ética Digital</td>
+                                    <td class="p-2 border border-cyber-border">Poco cuidado con PII.</td>
+                                    <td class="p-2 border border-cyber-border text-green-400">Protege su privacidad y la de otros.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <!-- Easter Egg #5 -->
+                        <div class="flex justify-center pt-2">
+                            <span onclick="findEasterEgg('egg5')" class="easter-egg text-xs text-cyber-border hover:text-cyber-orange">🏆 [Master_Badge.cert]</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 12,
+                chapter: "CAPÍTULO 6: RESUMEN Y RECURSOS",
+                title: "Cierre y Descargas",
+                type: "summary",
+                mascot: { exp: "feliz", speech: "¡Sistema protegido con éxito! Guarda tu progreso antes de salir." },
+                facilitator: "Cierre de la experiencia. Tiempo estimado: 2 minutos.",
+                source: "Portal Educativo CyberSec 2088.",
+                render: () => `
+                    <div class="space-y-4 text-center font-cyber">
+                        <div class="p-6 bg-cyber-bg rounded-xl border border-cyber-cyan/50 glow-cyan">
+                            <h3 class="text-xl font-bold text-cyber-cyan mb-2">¡Travesía Ciberpunk Completada!</h3>
+                            <p class="text-xs text-slate-300 mb-4">Puntuación Final acumulada: <span class="text-cyber-orange font-bold text-base" id="finalScoreVal">0</span> PTS</p>
+                            <button onclick="resetAllProgress()" class="btn-cyber px-4 py-2 bg-red-500/20 border border-red-500 text-red-400 text-xs hover:bg-red-500/40">
+                                Reiniciar Todo el Sistema
+                            </button>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        /* ==========================================================================
+           4. DATOS DE RAMIFICACIÓN COMPLETA (OBJETO JS - ESTRUCTURA SOLICITADA)
+           ========================================================================== */
+        const BRANCH_DATA = {
+            start: {
+                question: "Se detectó una fuga de datos en el servidor de la escuela. ¿Cuál es el primer paso?",
+                options: [
+                    { text: "Desconectar los servidores afectados de la red.", target: "node_isolate", type: "good" },
+                    { text: "Borrar todos los registros de eventos para ocultarlo.", target: "node_delete", type: "bad" },
+                    { text: "Enviar un correo masivo avisando sin verificar.", target: "node_panic", type: "medium" }
+                ]
+            },
+            node_isolate: {
+                question: "Servidores aislados con éxito. Ahora la intrusión está contenida. ¿Qué sigue?",
+                options: [
+                    { text: "Analizar los logs de auditoría para hallar la vulnerabilidad.", target: "node_logs", type: "good" },
+                    { text: "Reiniciar inmediatamente sin revisar los parches.", target: "node_restart_fail", type: "bad" }
+                ]
+            },
+            node_delete: {
+                question: "¡Error crítico! Ocultar registros impide saber qué robaron.",
+                options: [
+                    { text: "Solicitar ayuda de expertos forensic inmediatamente.", target: "node_logs", type: "medium" }
+                ]
+            },
+            node_panic: {
+                question: "El pánico causó caos en la comunidad escolar sin soluciones.",
+                options: [
+                    { text: "Retractarse y aislar los equipos infectados.", target: "node_isolate", type: "medium" }
+                ]
+            },
+            node_logs: {
+                question: "Se halló un malware tipo Ransomware. ¿Cómo restaurar la operación?",
+                options: [
+                    { text: "Restaurar copias de respaldo frías (Offline Backups).", target: "node_win", type: "good" },
+                    { text: "Pagar el rescate exigido por los atacantes.", target: "node_pay_fail", type: "bad" }
+                ]
+            },
+            node_win: {
+                question: "¡Victoria! El sistema se recuperó sin pérdida de datos.",
+                options: []
+            },
+            node_restart_fail: {
+                question: "El malware volvió a ejecutarse al reiniciar sin parchear.",
+                options: []
+            },
+            node_pay_fail: {
+                question: "Pagaste pero los atacantes no enviaron la clave de descifrado.",
+                options: []
+            }
+        };
+
+        let currentBranchNode = 'start';
+
+        function renderBranchNode(nodeId) {
+            currentBranchNode = nodeId;
+            const node = BRANCH_DATA[nodeId];
+            if (!node) return '';
+
+            // Guardar en historial
+            if (!state.branchHistory.includes(nodeId)) {
+                state.branchHistory.push(nodeId);
+            }
+
+            if (node.options.length === 0) {
+                // Nodo final
+                const isWin = nodeId === 'node_win';
+                if (isWin) unlockBadge('decision_maker');
+                return `
+                    <div class="space-y-4 font-cyber">
+                        <div class="p-4 rounded border ${isWin ? 'border-green-500 bg-green-950/30' : 'border-red-500 bg-red-950/30'}">
+                            <h4 class="text-sm font-bold ${isWin ? 'text-green-400' : 'text-red-400'}">
+                                ${isWin ? '¡OBJETIVO ALCANZADO!' : '¡CAMINO ADVERSO!'}
+                            </h4>
+                            <p class="text-xs text-slate-300 mt-2">${node.question}</p>
+                        </div>
+                        <button onclick="nextScene()" class="btn-cyber px-4 py-2 bg-cyber-cyan text-black text-xs font-bold">
+                            Ver Árbol de Decisiones →
+                        </button>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="space-y-4 font-cyber">
+                    <p class="text-sm text-cyber-cyan font-bold">${node.question}</p>
+                    <div class="space-y-2">
+                        ${node.options.map((opt, idx) => `
+                            <button onclick="selectBranchOption('${opt.target}', '${opt.type}')" class="w-full text-left p-3 rounded bg-cyber-bg border border-cyber-border text-xs hover:border-cyber-purple transition">
+                                ${idx + 1}. ${opt.text}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectBranchOption(target, type) {
+            if (type === 'good') addPoints(30);
+            const container = document.getElementById('sceneBody');
+            if (container) {
+                container.innerHTML = renderBranchNode(target);
+            }
+        }
+
+        function resetBranching() {
+            state.branchHistory = [];
+            unlockBadge('persistent');
+            jumpToScene(4); // Vuelve a la escena del caso
+        }
+
+        /* ==========================================================================
+           5. LÓGICA DE MINIJUEGOS E INTERACCIONES
+           ========================================================================== */
+        // Chat decision
+        function handleDecision(sceneId, type) {
+            const fb = document.getElementById('chatFeedback');
+            fb.classList.remove('hidden', 'bg-green-900/50', 'bg-red-900/50', 'bg-yellow-900/50');
+            
+            if (type === 'good') {
+                fb.classList.add('bg-green-900/50', 'text-green-300', 'border', 'border-green-500');
+                fb.innerHTML = "✅ ¡Excelente! Los enlaces acortados o no oficiales suelen llevar a páginas falsas de phishing.";
+                addPoints(50);
+                unlockBadge('phishing_master');
+            } else if (type === 'bad') {
+                fb.classList.add('bg-red-900/50', 'text-red-300', 'border', 'border-red-500');
+                fb.innerHTML = "❌ ¡Alerta! Caíste en el trampa. Nunca ingreses credenciales en enlaces sospechosos.";
+            } else {
+                fb.classList.add('bg-yellow-900/50', 'text-yellow-300', 'border', 'border-yellow-500');
+                fb.innerHTML = "⚠️ Responder valida tu correo activo para los atacantes. Es preferible verificar por canales oficiales.";
+            }
+        }
+
+        // Clasificador de Datos
+        const sortItemsList = [
+            { text: '"Contraseña del correo personal"', type: 'private' },
+            { text: '"Nombre del Colegio"', type: 'public' },
+            { text: '"Número de Tarjeta de Crédito de tus padres"', type: 'private' },
+            { text: '"Horario general de clases"', type: 'public' }
+        ];
+        let currentSortIdx = 0;
+
+        function sortItem(chosenType) {
+            if (currentSortIdx >= sortItemsList.length) return;
+            
+            const current = sortItemsList[currentSortIdx];
+            if (current.type === chosenType) {
+                addPoints(25);
+                showCustomToast("¡Correcto!");
+            } else {
+                showCustomToast("Incorrecto.");
+            }
+
+            currentSortIdx++;
+            const scoreEl = document.getElementById('sortScore');
+            if (scoreEl) scoreEl.innerText = currentSortIdx;
+
+            if (currentSortIdx < sortItemsList.length) {
+                document.getElementById('currentItem').innerText = sortItemsList[currentSortIdx].text;
+            } else {
+                document.getElementById('currentItem').innerText = "¡Clasificación completada con éxito!";
+                unlockBadge('sorter_pro');
+            }
+        }
+
+        // Medidor de contraseñas
+        function checkPasswordStrength(val) {
+            let score = 0;
+            const reqLen = document.getElementById('reqLen');
+            const reqNum = document.getElementById('reqNum');
+            const reqSym = document.getElementById('reqSym');
+
+            if (val.length >= 10) {
+                score++;
+                if (reqLen) reqLen.innerText = "✅ Mínimo 10 caracteres";
+            } else if (reqLen) reqLen.innerText = "❌ Mínimo 10 caracteres";
+
+            if (/\d/.test(val)) {
+                score++;
+                if (reqNum) reqNum.innerText = "✅ Incluye números";
+            } else if (reqNum) reqNum.innerText = "❌ Incluye números";
+
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(val)) {
+                score++;
+                if (reqSym) reqSym.innerText = "✅ Incluye símbolos (!@#$%^&*)";
+            } else if (reqSym) reqSym.innerText = "❌ Incluye símbolos (!@#$%^&*)";
+
+            const meter = document.getElementById('passMeterBar');
+            const label = document.getElementById('passScoreLabel');
+
+            if (score === 1) {
+                if (meter) { meter.style.width = '33%'; meter.className = 'h-full bg-red-500 transition-all'; }
+                if (label) { label.innerText = 'Débil'; label.className = 'text-red-400'; }
+            } else if (score === 2) {
+                if (meter) { meter.style.width = '66%'; meter.className = 'h-full bg-yellow-500 transition-all'; }
+                if (label) { label.innerText = 'Media'; label.className = 'text-yellow-400'; }
+            } else if (score === 3) {
+                if (meter) { meter.style.width = '100%'; meter.className = 'h-full bg-green-500 transition-all'; }
+                if (label) { label.innerText = 'Indestructible'; label.className = 'text-green-400'; }
+                unlockBadge('pass_master');
+            }
+        }
+
+        // Brújula ética
+        const compassQuestions = [
+            "¿Compartirías un pantallazo privado si es divertido?",
+            "¿Usarías la cuenta abierta de un compañero para gastarle una broma?",
+            "¿Reportarías un caso de ciberacoso aunque no sea contra ti?"
+        ];
+        let compassIdx = 0;
+
+        function answerCompass(ans) {
+            compassIdx++;
+            if (compassIdx < compassQuestions.length) {
+                document.getElementById('compassQText').innerText = compassQuestions[compassIdx];
+            } else {
+                document.getElementById('compassQuestionBox').classList.add('hidden');
+                const rec = document.getElementById('compassRecommendation');
+                rec.classList.remove('hidden');
+                rec.innerHTML = "💡 <b>Recomendación de la Brújula:</b> Mantén la empatía digital. Trata los datos e identidad de los demás con el mismo respeto que exiges para los tuyos.";
+                unlockBadge('compass_guru');
+            }
+        }
+
+        // Semáforo
+        function checkTraffic(level) {
+            const fb = document.getElementById('trafficFeedback');
+            fb.classList.remove('hidden', 'bg-green-900/50', 'bg-red-900/50');
+            if (level === 'rojo') {
+                fb.classList.add('bg-green-900/50', 'text-green-300', 'border', 'border-green-500');
+                fb.innerText = "¡Correcto! Entrar a servicios bancarios en redes Wi-Fi abiertas sin cifrado es un riesgo crítico de intercepción de datos.";
+                addPoints(40);
+                unlockBadge('analyst');
+            } else {
+                fb.classList.add('bg-red-900/50', 'text-red-300', 'border', 'border-red-500');
+                fb.innerText = "Incorrecto. Las redes públicas sin protección son vulnerables a ataques Man-in-the-Middle.";
+            }
+        }
+
+        // Línea de tiempo
+        let timelineOrder = [];
+        function pickTimeline(id) {
+            if (!timelineOrder.includes(id)) {
+                timelineOrder.push(id);
+                document.getElementById(`tl${id}`).classList.add('border-cyber-cyan', 'bg-cyber-cyan/10');
+            }
+            if (timelineOrder.length === 3) {
+                const status = document.getElementById('timelineStatus');
+                if (JSON.stringify(timelineOrder) === JSON.stringify([1, 2, 3])) {
+                    status.innerText = "¡Línea de tiempo ordenada correctamente!";
+                    status.className = "text-xs text-green-400 font-bold";
+                    unlockBadge('timeline_hero');
+                } else {
+                    status.innerText = "Orden incorrecto. Intenta de nuevo.";
+                    status.className = "text-xs text-red-400";
+                    timelineOrder = [];
+                    [1,2,3].forEach(i => document.getElementById(`tl${i}`).classList.remove('border-cyber-cyan', 'bg-cyber-cyan/10'));
+                }
+            }
+        }
+
+        // Quiz Final
+        const quizQuestions = [
+            { q: "¿Qué es el Phishing?", opts: ["Un software de diseño", "Un engaño para robar credenciales", "Un antivirus de red"], a: 1 },
+            { q: "¿Qué caracteriza a una contraseña fuerte?", opts: ["Usar tu fecha de nacimiento", "Más de 10 caracteres con letras, números y símbolos", "Tu nombre al revés"], a: 1 },
+            { q: "¿Qué significa 2FA?", opts: ["Doble Factor de Autenticación", "Filtro de Archivos 2", "Formato de Antivirus"], a: 0 }
+        ];
+        let quizScore = 0;
+
+        function renderQuizScreen() {
+            return `
+                <div class="space-y-4 font-cyber">
+                    <div id="quizContainer" class="space-y-4">
+                        ${quizQuestions.map((q, qIdx) => `
+                            <div class="bg-cyber-bg p-4 rounded border border-cyber-border text-xs">
+                                <p class="font-bold text-slate-200 mb-2">${qIdx + 1}. ${q.q}</p>
+                                <div class="space-y-1">
+                                    ${q.opts.map((opt, oIdx) => `
+                                        <label class="flex items-center gap-2 cursor-pointer hover:text-cyber-cyan">
+                                            <input type="radio" name="quiz_q${qIdx}" value="${oIdx}" class="accent-cyber-cyan">
+                                            <span>${opt}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                        <button onclick="evaluateQuiz()" class="btn-cyber w-full py-2 bg-cyber-cyan text-black font-bold text-xs">
+                            Enviar Respuestas del Quiz
+                        </button>
+                    </div>
+                    <div id="quizResult" class="hidden p-4 rounded bg-cyber-bg border border-cyber-purple text-xs"></div>
+                </div>
+            `;
+        }
+
+        function evaluateQuiz() {
+            let correct = 0;
+            quizQuestions.forEach((q, idx) => {
+                const selected = document.querySelector(`input[name="quiz_q${idx}"]:checked`);
+                if (selected && parseInt(selected.value) === q.a) {
+                    correct++;
+                }
+            });
+
+            const res = document.getElementById('quizResult');
+            res.classList.remove('hidden');
+            res.innerHTML = `Resultados: <b>${correct}/${quizQuestions.length}</b> acertadas.`;
+
+            if (correct === quizQuestions.length) {
+                unlockBadge('quiz_ace');
+                addPoints(100);
+            }
+        }
+
+        /* ==========================================================================
+           6. NAVEGACIÓN DE ESCENAS & MOTOR DE DECODIFICACIÓN Y TILT 3D
+           ========================================================================== */
+        function renderScene(index) {
+            const scene = SCENES[index];
+            state.currentSceneIndex = index;
+            state.sceneStartTime = Date.now();
+
+            // Actualizar Encabezado Escena
+            document.getElementById('sceneCategory').innerText = scene.chapter;
+            document.getElementById('sceneCounter').innerText = `Escena ${index + 1} de ${SCENES.length}`;
+            
+            // Decodificador de título
+            decodeTextEffect(document.getElementById('decodeTitle'), scene.title);
+
+            // Fuente BTN
+            const srcBtn = document.getElementById('sourceBtn');
+            if (scene.source) {
+                srcBtn.classList.remove('hidden');
+                document.getElementById('sourceContent').innerText = scene.source;
+            } else {
+                srcBtn.classList.add('hidden');
+            }
+
+            // Actualizar Mascota
+            updateMascot(scene.mascot.exp, scene.mascot.speech);
+
+            // Render Body
+            const body = document.getElementById('sceneBody');
+            body.innerHTML = scene.render();
+
+            // Notas Facilitador
+            document.getElementById('facilitatorNotes').innerText = scene.facilitator;
+
+            // Botones Nav
+            document.getElementById('prevBtn').disabled = (index === 0);
+            document.getElementById('nextBtn').disabled = (index === SCENES.length - 1);
+
+            // Resumen final score
+            const finalScoreVal = document.getElementById('finalScoreVal');
+            if (finalScoreVal) finalScoreVal.innerText = state.score;
+
+            // Renderizar árbol si aplica
+            if (scene.type === 'branch_summary') {
+                const treeBox = document.getElementById('treePathContainer');
+                if (treeBox) {
+                    treeBox.innerHTML = state.branchHistory.length > 0 
+                        ? state.branchHistory.map((step, i) => `<div>▶ Paso ${i+1}: <span class="text-cyber-cyan">${step}</span></div>`).join('')
+                        : 'No has realizado ninguna ruta aún.';
+                }
+            }
+
+            // Aplicar Tilt 3D en tarjetas
+            apply3DTilt();
+            // Re-render Lucide Icons
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function nextScene() {
+            if (state.currentSceneIndex < SCENES.length - 1) {
+                renderScene(state.currentSceneIndex + 1);
+            }
+        }
+
+        function prevScene() {
+            if (state.currentSceneIndex > 0) {
+                renderScene(state.currentSceneIndex - 1);
+            }
+        }
+
+        function jumpToScene(idx) {
+            if (idx >= 0 && idx < SCENES.length) {
+                renderScene(idx);
+            }
+        }
+
+        /* Ecosistema de Decodificación de Texto en Título */
+        function decodeTextEffect(element, finalValue) {
+            const chars = 'ABCDEFGHJKMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+            let iterations = 0;
+            const interval = setInterval(() => {
+                element.innerText = finalValue
+                    .split('')
+                    .map((char, idx) => {
+                        if (idx < iterations) return finalValue[idx];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    })
+                    .join('');
+
+                if (iterations >= finalValue.length) clearInterval(interval);
+                iterations += 1 / 2;
+            }, 30);
+        }
+
+        /* Tilt 3D Effect for Cards */
+        function apply3DTilt() {
+            const cards = document.querySelectorAll('.tilt-card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const cx = rect.width / 2;
+                    const cy = rect.height / 2;
+                    const rx = (y - cy) / 15;
+                    const ry = (cx - x) / 15;
+                    card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+                });
+            });
+        }
+
+        /* ==========================================================================
+           7. INTERFAZ DE USUARIOS, MODALES Y MODOS ADICIONALES
+           ========================================================================== */
+        function updateHeaderUI() {
+            document.getElementById('scoreDisplay').innerText = `${state.score} PTS`;
+            document.getElementById('badgeCount').innerText = `${state.unlockedBadges.length}/13`;
+            
+            // Render Chapter Steps
+            const nodes = document.getElementById('chapterNodes');
+            nodes.innerHTML = SCENES.map((s, idx) => `
+                <div onclick="jumpToScene(${idx})" class="w-2.5 h-2.5 rounded-full cursor-pointer transition ${idx === state.currentSceneIndex ? 'bg-cyber-cyan scale-125 glow-cyan' : 'bg-cyber-border hover:bg-cyber-purple'}" title="Escena ${idx+1}"></div>
+            `).join('');
+
+            // Achievement Modal Content
+            const grid = document.getElementById('achievementsGrid');
+            grid.innerHTML = ACHIEVEMENTS.map(ach => {
+                const unlocked = state.unlockedBadges.includes(ach.id);
+                return `
+                    <div class="p-3 rounded-lg border flex items-center gap-3 ${unlocked ? 'border-cyber-purple bg-cyber-purple/10 text-slate-100' : 'border-cyber-border opacity-40 text-slate-500'}">
+                        <div class="w-8 h-8 rounded bg-cyber-card flex items-center justify-center shrink-0">
+                            <i data-lucide="${ach.icon}" class="w-4 h-4 ${unlocked ? 'text-cyber-purple' : ''}"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold font-cyber">${ach.title}</h4>
+                            <p class="text-[10px] leading-tight">${ach.desc}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleModal(modalId) {
+            const m = document.getElementById(modalId);
+            if (m) m.classList.toggle('hidden');
+        }
+
+        function toggleFacilitatorMode() {
+            state.facilitatorMode = !state.facilitatorMode;
+            document.getElementById('facilitatorPanel').classList.toggle('hidden', !state.facilitatorMode);
+            showCustomToast(state.facilitatorMode ? "Modo Facilitador Activado (N)" : "Modo Facilitador Desactivado");
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+
+        function showCustomToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-16 right-6 z-50 bg-cyber-card border border-cyber-cyan text-cyber-cyan px-4 py-2 rounded font-cyber text-xs shadow-xl animate-bounce';
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        function showBadgeNotification(badgeId) {
+            const ach = ACHIEVEMENTS.find(a => a.id === badgeId);
+            if (!ach) return;
+            const notif = document.createElement('div');
+            notif.className = 'fixed bottom-20 left-6 z-50 bg-cyber-card border-2 border-cyber-purple text-slate-100 px-4 py-3 rounded-xl font-cyber text-xs shadow-2xl flex items-center gap-3 animate-pulse';
+            notif.innerHTML = `
+                <div class="p-2 bg-cyber-purple/20 rounded-full text-cyber-purple"><i data-lucide="trophy"></i></div>
+                <div>
+                    <p class="text-[10px] text-cyber-purple font-bold uppercase">¡LOGRO DESBLOQUEADO!</p>
+                    <p class="font-bold">${ach.title}</p>
+                </div>
+            `;
+            document.body.appendChild(notif);
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => notif.remove(), 4000);
+        }
+
+        function resetAllProgress() {
+            try {
+                localStorage.removeItem('cybersec_progress');
+                state.score = 0;
+                state.unlockedBadges = [];
+                state.easterEggsFound = [];
+                jumpToScene(0);
+                updateHeaderUI();
+                showCustomToast("Sistema reiniciado.");
+            } catch(e){}
+        }
+
+        /* ==========================================================================
+           8. CANVAS DE FONDO ANIMADO (CUADRÍCULA 3D + PARTÍCULAS CONECTADAS)
+           ========================================================================== */
+        function initCyberCanvas() {
+            const canvas = document.getElementById('cyberCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Instanciar Partículas
+            for (let i = 0; i < 45; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    vy: (Math.random() - 0.5) * 0.8,
+                    radius: Math.random() * 2 + 1
+                });
+            }
+
+            let gridOffset = 0;
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+
+                // 1. Dibujar Cuadrícula Perspectiva 3D Cyberpunk
+                ctx.strokeStyle = 'rgba(168, 85, 247, 0.08)';
+                ctx.lineWidth = 1;
+
+                gridOffset = (gridOffset + 0.5) % 40;
+
+                // Líneas horizontales
+                for (let y = gridOffset; y < height; y += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+
+                // Líneas verticales
+                for (let x = 0; x < width; x += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+
+                // 2. Dibujar y Conectar Partículas (Nube ciber)
+                ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
+
+                particles.forEach((p, idx) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0 || p.x > width) p.vx *= -1;
+                    if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Conectar partículas cercanas
+                    for (let j = idx + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
+                        const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                        if (dist < 120) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
+                    }
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        /* ==========================================================================
+           9. ATAJOS DE TECLADO Y GESTOS TOUCH
+           ========================================================================== */
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+                nextScene();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevScene();
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            } else if (e.key === 'n' || e.key === 'N') {
+                toggleFacilitatorMode();
+            }
+        });
+
+        // Control táctil Swipe en móviles
+        let touchStartX = 0;
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].screenX;
+            if (touchStartX - touchEndX > 50) {
+                nextScene(); // Deslizar a la izquierda = Siguiente
+            } else if (touchEndX - touchStartX > 50) {
+                prevScene(); // Deslizar a la derecha = Anterior
+            }
+        });
+
+        /* Temporizador modo facilitador */
+        setInterval(() => {
+            if (state.facilitatorMode) {
+                const elapsed = Math.floor((Date.now() - state.sceneStartTime) / 1000);
+                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                const secs = String(elapsed % 60).padStart(2, '0');
+                const timerEl = document.getElementById('sceneTimer');
+                if (timerEl) timerEl.innerText = `${mins}:${secs}`;
+            }
+        }, 1000);
+
+        /* ==========================================================================
+           10. INICIALIZACIÓN GENERAL DEL SISTEMA
+           ========================================================================== */
+        window.onload = function() {
+            loadProgress();
+            unlockBadge('first_step');
+            initCyberCanvas();
+            renderScene(0);
+            updateHeaderUI();
+        };
+    </script>
+</body>
+</html>
